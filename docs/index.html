@@ -1,15 +1,34 @@
 <!DOCTYPE html>
-<html lang="de">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+ <title>decimal Game of Life</title>
 </head>
 
 <body>
-  <canvas id="bild" width="1000" height="1000"></canvas>
-  <script src="script.js"></script>
+ <canvas id="c" style="border: 2px solid black; z-index: 1"></canvas>
+ <div id="t" style="position: absolute; z-index: 2">
+  move the Cursor with WASD
+  <br>
+  press 0-9 to Place a Cell
+  <br>
+  press n to go to the next Step of the Simulation
+  <br>
+  press the Spacebar to start the Simulation
+  <br>
+  <br>
+  The Rule of the cellular Automata:
+  <br>
+  each tile has a value between 0 and 9
+  <br>
+  in each iteration the sum of a tile
+  <br>
+  and its neighbours gets calculated
+  <br>
+  if the sum is between 10 and 20,
+  <br>
+  the new value for that Tile ist sum%10
+ </div>
+ <script src="script.js"></script>
 </body>
 
 </html>

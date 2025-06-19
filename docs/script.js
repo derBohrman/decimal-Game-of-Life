@@ -1,141 +1,119 @@
-let bild = document.getElementById("bild")
-let context = bild.getContext("2d")
-let map = []
-for (let y = 0; y < 100; y++) {
-    map.push([])
-    for (let x = 0; x < 100; x++) {
-        map[y].push(0)
-    }
-}
-function next(posy, posx) {
-    let enviroment_worth = map[posy][posx] + map[posy - 1][posx] + map[posy - 1][posx + 1] + map[posy][posx + 1] + map[posy + 1][posx + 1] + map[posy + 1][posx] + map[posy + 1][posx - 1] + map[posy][posx - 1] + map[posy - 1][posx - 1]
-    if (enviroment_worth > 20) {
-        return 0
-    }
-    if (enviroment_worth < 10) {
-        return 0
-    }
-    return parseInt(enviroment_worth.toString().split("").pop())
-}
-console.log(next(1, 2))
-console.log(map)
-function iteration() {
-    let map_new = []
-    for (let y = 0; y < 100; y++) {
-        map_new.push([])
-        for (let x = 0; x < 100; x++) {
-            map_new[y].push(0)
-        }
-    }
-    for (let y = 1; y < 99; y++) {
-        for (let x = 1; x < 99; x++) {
-            map_new[y][x] = next(y, x)
-        }
-    }
-    return map_new
-}
-console.log(map)
-function draw_in_canvas() {
-    for (let y = 0; y < 100; y++) {
-        for (let x = 0; x < 100; x++) {
-            switch (map[y][x]) {
-                case 0:
-                    context.fillStyle = "rgb(255 255 255)"
-                    break;
-                case 1:
-                    context.fillStyle = "rgb(0 255 255)"
-                    break;
-                case 2:
-                    context.fillStyle = "rgb(255 0 255)"
-                    break;
-                case 3:
-                    context.fillStyle = "rgb(255 255 0)"
-                    break;
-                case 4:
-                    context.fillStyle = "rgb(0 0 255)"
-                    break;
-                case 5:
-                    context.fillStyle = "rgb(0 255 0)"
-                    break;
-                case 6:
-                    context.fillStyle = "rgb(255 0 0)"
-                    break;
-                case 7:
-                    context.fillStyle = "rgb(0 0 0)"
-                    break;
-                case 8:
-                    context.fillStyle = "rgb(100 100 255)"
-                    break;
-                case 9:
-                    context.fillStyle = "rgb(255 100 100)"
-                    break;
-            }
-            context.fillRect(x * 10, y * 10, 10, 10)
-        }
-    }
-}
-draw_in_canvas()
+const c = document.getElementById("c")
+c.style.position = "absolute"
+c.style.left = "50%"
+c.style.top = "50%"
+c.style.transform = "translate(-50%, -50%)"
+const ctx = c.getContext("2d")
+const min = (a, b) => Math.min(a, b)
+const kante = 100
+const pixSize = ~~(min(window.innerWidth, window.innerHeight) / kante)
+const size = kante ** 2
+c.width = kante * pixSize
+c.height = kante * pixSize
+const xy = (pos) => [pos % kante, ~~(pos / kante)]
 let pause = true
-let cursorx = 0
-let cursory = 0
-document.addEventListener("keydown", function addPixel(event) {
-    context.strokeStyle = "rgb(255 255 255 )"
-    context.strokeRect(cursorx * 10, cursory * 10, 10, 10)
-    switch (event.key) {
-        case "a":
-            if (cursorx > 0) {
-                cursorx--
-            }
-            break;
-        case "w":
-            if (cursory > 0) {
-                cursory--
-            }
-            break;
-        case "d":
-            if (cursorx < 99) {
-                cursorx++
-            }
-            break;
-        case "s":
-            if (cursory < 99) {
-                cursory++
-            }
-            break;
-        case " ":
-            if (pause) {
-                pause = false
-            } else {
-                pause = true
-            }
-            break;
-        case "n":
-            map = iteration()
-            break;
-        case "0":
-        case "1":
-        case "2":
-        case "3":
-        case "4":
-        case "5":
-        case "6":
-        case "7":
-        case "8":
-        case "9":
-            map[cursory][cursorx] = parseInt(event.key)
-            break;
-
-    }
-    draw_in_canvas()
-    context.strokeStyle = "rgb(255 0 0)"
-    context.strokeRect(cursorx * 10, cursory * 10, 10, 10)
+let changed = true
+let cursPos = cord(xy(size - 1)[0] >> 1, xy(size - 1)[1] >> 1)
+let map = Array(size).fill(0)
+const env = [[0, -1], [1, 0], [0, 1], [-1, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]]
+const colors = [
+ [255, 255, 255],
+ [0, 255, 255],
+ [255, 0, 255],
+ [255, 255, 0],
+ [0, 0, 255],
+ [0, 255, 0],
+ [255, 0, 0],
+ [0, 0, 0],
+ [100, 100, 255],
+ [255, 100, 100]
+]
+const slowAct = {
+ " ": () => pause = !pause,
+ "n": iter
+}
+const keyAct = {
+ "w": () => cursPos = posRich(cursPos, 0),
+ "d": () => cursPos = posRich(cursPos, 1),
+ "s": () => cursPos = posRich(cursPos, 2),
+ "a": () => cursPos = posRich(cursPos, 3),
+ "0": () => map[cursPos] = 0,
+ "1": () => map[cursPos] = 1,
+ "2": () => map[cursPos] = 2,
+ "3": () => map[cursPos] = 3,
+ "4": () => map[cursPos] = 4,
+ "5": () => map[cursPos] = 5,
+ "6": () => map[cursPos] = 6,
+ "7": () => map[cursPos] = 7,
+ "8": () => map[cursPos] = 8,
+ "9": () => map[cursPos] = 9
+}
+let pressedKeys = new Set()
+function cord(x, y) {
+ while (x >= kante) {
+  x -= kante
+ }
+ while (y >= kante) {
+  y -= kante
+ }
+ while (y < 0) {
+  y += kante
+ }
+ while (x < 0) {
+  x += kante
+ }
+ return y * kante + x
+}
+function posRich(pos, rich) {
+ return cord(xy(pos)[0] + env[rich][0], xy(pos)[1] + env[rich][1])
+}
+function next(pos) {
+ let sum = map[pos]
+ for (let rich = 0; rich < 8; rich++) {
+  sum += map[posRich(pos, rich)]
+ }
+ return 10 < sum && sum < 20 ? sum % 10 : 0
+}
+function iter() {
+ let newMap = Array(size)
+ for (let pos = 0; pos < size; pos++) {
+  newMap[pos] = next(pos)
+ }
+ map = newMap
+}
+function draw() {
+ if (changed) {
+  for (let pos = 0; pos < size; pos++) {
+   let col = colors[map[pos]]
+   ctx.fillStyle = `rgb(${col[0]} ${col[1]} ${col[2]})`
+   ctx.fillRect(xy(pos)[0] * pixSize, xy(pos)[1] * pixSize, pixSize, pixSize)
+  }
+  ctx.strokeStyle = "rgb(255 0 0)"
+  ctx.strokeRect(xy(cursPos)[0] * pixSize, xy(cursPos)[1] * pixSize, pixSize, pixSize)
+ }
+ requestAnimationFrame(draw)
+}
+document.addEventListener("keydown", e => {
+ if (slowAct[e.key]) {
+  slowAct[e.key]()
+ } else {
+  pressedKeys.add(e.key)
+ }
 })
-
-setInterval(function () {
-    if (!pause) {
-        context.fillStyle = "rgb(0 0 0)"
-        context.fillRect(0, 0, 1000, 1000)
-        map = iteration()
-        draw_in_canvas()
-    }
-}, 100)
+document.addEventListener("keyup", e => {
+ pressedKeys.delete(e.key)
+})
+setInterval(() => {
+ let keys = [...pressedKeys]
+ for (let i = 0; i < keys.length; i++) {
+  (keyAct[keys[i]] || (() => 0))()
+  changed |= keyAct[keys[i]]
+ }
+}, 20)
+setInterval(() =>{
+ if (!pause) {
+  iter()
+  changed = true
+ }
+},100)
+requestAnimationFrame(draw)
