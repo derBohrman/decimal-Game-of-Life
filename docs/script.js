@@ -30,7 +30,11 @@ const colors = [
 ]
 const slowAct = {
  " ": () => pause = !pause,
- "n": iter
+ "n": iter,
+ "ArrowUp": () => cursPos = posRich(cursPos, 0),
+ "ArrowRight": () => cursPos = posRich(cursPos, 1),
+ "ArrowDown": () => cursPos = posRich(cursPos, 2),
+ "ArrowLeft": () => cursPos = posRich(cursPos, 3)
 }
 const keyAct = {
  "w": () => cursPos = posRich(cursPos, 0),
@@ -78,15 +82,23 @@ function iter() {
  let newMap = Array(size)
  for (let pos = 0; pos < size; pos++) {
   newMap[pos] = next(pos)
+  if (newMap[pos] != map[pos]) {
+   changed = true
+  }
  }
  map = newMap
 }
 function draw() {
  if (changed) {
+  changed = false
+  ctx.fillStyle = "rgb(255 255 255)"
+  ctx.fillRect(0, 0, c.width, c.height)
   for (let pos = 0; pos < size; pos++) {
-   let col = colors[map[pos]]
-   ctx.fillStyle = `rgb(${col[0]} ${col[1]} ${col[2]})`
-   ctx.fillRect(xy(pos)[0] * pixSize, xy(pos)[1] * pixSize, pixSize, pixSize)
+   if (map[pos]) {
+    let col = colors[map[pos]]
+    ctx.fillStyle = `rgb(${col[0]} ${col[1]} ${col[2]})`
+    ctx.fillRect(xy(pos)[0] * pixSize, xy(pos)[1] * pixSize, pixSize, pixSize)
+   }
   }
   ctx.strokeStyle = "rgb(255 0 0)"
   ctx.strokeRect(xy(cursPos)[0] * pixSize, xy(cursPos)[1] * pixSize, pixSize, pixSize)
@@ -96,6 +108,7 @@ function draw() {
 document.addEventListener("keydown", e => {
  if (slowAct[e.key]) {
   slowAct[e.key]()
+  changed = true
  } else {
   pressedKeys.add(e.key)
  }
@@ -106,14 +119,15 @@ document.addEventListener("keyup", e => {
 setInterval(() => {
  let keys = [...pressedKeys]
  for (let i = 0; i < keys.length; i++) {
-  (keyAct[keys[i]] || (() => 0))()
-  changed |= keyAct[keys[i]]
+  if (keyAct[keys[i]]) {
+   keyAct[keys[i]]()
+   changed = true
+  }
  }
 }, 20)
-setInterval(() =>{
+setInterval(() => {
  if (!pause) {
   iter()
-  changed = true
  }
-},100)
+}, 100)
 requestAnimationFrame(draw)
