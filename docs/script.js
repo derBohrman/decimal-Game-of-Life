@@ -13,8 +13,17 @@ c.height = kante * pixSize
 const xy = (pos) => [pos % kante, ~~(pos / kante)]
 let pause = true
 let changed = true
+let selecting = false
+let paste = []
 let cursPos = cord(xy(size - 1)[0] >> 1, xy(size - 1)[1] >> 1)
+let pressedKeys = new Set
+let selected = new Set
 let map = Array(size).fill(0)
+const btn = document.getElementById("clear")
+btn.onclick = () => {
+ map = Array(size).fill(0)
+ changed = true
+}
 const env = [[0, -1], [1, 0], [0, 1], [-1, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]]
 const colors = [
  [255, 255, 255],
@@ -31,6 +40,8 @@ const colors = [
 const slowAct = {
  " ": () => pause = !pause,
  "n": iter,
+ "c": copyLife,
+ "v": pasteLife,
  "ArrowUp": () => cursPos = posRich(cursPos, 0),
  "ArrowRight": () => cursPos = posRich(cursPos, 1),
  "ArrowDown": () => cursPos = posRich(cursPos, 2),
@@ -52,7 +63,6 @@ const keyAct = {
  "8": () => map[cursPos] = 8,
  "9": () => map[cursPos] = 9
 }
-let pressedKeys = new Set()
 function cord(x, y) {
  while (x >= kante) {
   x -= kante
@@ -78,6 +88,11 @@ function next(pos) {
  }
  return 10 < sum && sum < 20 ? sum % 10 : 0
 }
+function addPos(posA, posB) {
+ let [xA, yA] = xy(posA)
+ let [xB, yB] = xy(posB)
+ return cord(xA + xB, yA + yB)
+}
 function iter() {
  let newMap = Array(size)
  for (let pos = 0; pos < size; pos++) {
@@ -88,6 +103,52 @@ function iter() {
  }
  map = newMap
 }
+function copyLife() {
+ selecting = !selecting
+ if (selecting) {
+  return
+ }
+ let select = [...selected]
+ let minx = 99
+ let miny = 99
+ for (let i = 0; i < select.length; i++) {
+  select[i] = [xy(select[i]), map[select[i]]]
+  minx = min(select[i][0][0], minx)
+  miny = min(select[i][0][1], miny)
+ }
+ for (let i = 0; i < select.length; i++) {
+  select[i][0] = cord(select[i][0][0] - minx, select[i][0][1] - miny)
+ }
+ let out = ""
+ for (let i = select.length - 1; i > -1; i--) {
+  out += select[i] + (i ? "," : "")
+ }
+ navigator.clipboard.writeText(out)
+}
+function pasteLife() {
+ if (paste.length) {
+  for (let i = 0; i < paste.length; i++) {
+   map[addPos(paste[i][0], cursPos)] = paste[i][1]
+  }
+  paste = []
+  return
+ }
+ navigator.clipboard.readText().then(text => {
+  text = text.split(",")
+  for (let i = 0; i < text.length; i += 2) {
+   paste.push([~~text[i], ~~text[i + 1]])
+  }
+ })
+}
+function pixel(pos, type, mult = 1) {
+ let col = colors[type]
+ let rgb = "rgb("
+ for (let i = 0; i < 3; i++) {
+  rgb += ~~min(col[i] * mult, 255) + (i < 2 ? " " : "")
+ }
+ ctx.fillStyle = rgb + ")"
+ ctx.fillRect(xy(pos)[0] * pixSize, xy(pos)[1] * pixSize, pixSize, pixSize)
+}
 function draw() {
  if (changed) {
   changed = false
@@ -95,10 +156,16 @@ function draw() {
   ctx.fillRect(0, 0, c.width, c.height)
   for (let pos = 0; pos < size; pos++) {
    if (map[pos]) {
-    let col = colors[map[pos]]
-    ctx.fillStyle = `rgb(${col[0]} ${col[1]} ${col[2]})`
-    ctx.fillRect(xy(pos)[0] * pixSize, xy(pos)[1] * pixSize, pixSize, pixSize)
+    pixel(pos, map[pos])
    }
+  }
+  let select = [...selected]
+  for (let i = 0; i < select.length; i++) {
+   let pos = select[i]
+   pixel(pos, map[pos], 0.5)
+  }
+  for (let i = 0; i < paste.length; i++) {
+   pixel(addPos(paste[i][0], cursPos), paste[i][1])
   }
   ctx.strokeStyle = "rgb(255 0 0)"
   ctx.strokeRect(xy(cursPos)[0] * pixSize, xy(cursPos)[1] * pixSize, pixSize, pixSize)
@@ -113,6 +180,13 @@ document.addEventListener("keydown", e => {
   pressedKeys.add(e.key)
  }
 })
+c.addEventListener("click", (e) => {
+ let rect = c.getBoundingClientRect()
+ let x = ~~((e.clientX - rect.left) * c.width / rect.width / pixSize)
+ let y = ~~((e.clientY - rect.top) * c.height / rect.height / pixSize)
+ cursPos = cord(x, y)
+ changed = true
+})
 document.addEventListener("keyup", e => {
  pressedKeys.delete(e.key)
 })
@@ -123,6 +197,13 @@ setInterval(() => {
    keyAct[keys[i]]()
    changed = true
   }
+ }
+ if (selecting && !selected.has(cursPos)) {
+  selected.add(cursPos)
+  changed = true
+ } else if (!selecting && selected.size != 0) {
+  selected = new Set
+  changed = true
  }
 }, 20)
 setInterval(() => {
