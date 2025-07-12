@@ -28,33 +28,35 @@ function next(pos) {
  }
  return 10 < sum && sum < 20 ? sum % 10 : 0
 }
-function minSizeDif(){
- for (let i = 0;i< kante>>1;i++) {
-  for (let j = i; j < kante-i; j++) {
+function minSizeDif() {
+ for (let i = 0; i < kante >> 1; i++) {
+  for (let j = i; j < kante - i; j++) {
    for (let l = 0; l < 4; l++) {
-    if (map[posRich(cord(...edgePos[l](j)), l, i+1)]) {
-     return -2*i+2
+    if (map[posRich(cord(...edgePos[l](j)), l, i + 1)]) {
+     return -2 * i + 2
     }
    }
   }
  }
- return 1-kante
+ return 1 - kante
 }
-function iter() {
- let resize = minSizeDif()
- if (resize) {
-  let newMap = Array(size(resize)).fill(0)
-  let half = resize >> 1
+function shrinkMap(dif) {
+ if (dif) {
+  let newMap = Array(size(dif)).fill(0)
+  let half = dif >> 1
   let lb = max(0, half)
-  let ub = min(kante, kante + resize)
+  let ub = min(kante, kante + dif)
   for (let x = lb; x < ub; x++) {
    for (let y = lb; y < ub; y++) {
-    newMap[cord(x + half, y + half, kante + resize)] = map[cord(x, y)]
+    newMap[cord(x + half, y + half, kante + dif)] = map[cord(x, y)]
    }
   }
-  kante += resize
+  kante += dif
   map = newMap
  }
+}
+function iter() {
+ shrinkMap(minSizeDif())
  living = Array(9).fill(0)
  let newMap = Array(size()).fill(0)
  for (let x = 1; x < kante - 1; x++) {
@@ -66,18 +68,44 @@ function iter() {
  }
  map = newMap
 }
-map = [
- 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0,
- 0, 5, 5, 5, 0,
- 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0
-]
-iter()
-print()
-iter()
-print()
-iter()
-print()
-iter()
-print()
+function quickTest(structure) {
+ kante = 5
+ map = Array(size()).fill(0)
+ let initialLife = Array(9).fill(0)
+ for (let x = 1; x < kante - 1; x++) {
+  for (let y = 1; y < kante - 1; y++) {
+   map[cord(x, y)] = structure[cord(x - 1, y - 1, 3)]
+   initialLife[map[cord(x, y)] - 1]++
+  }
+ }
+ let sum = 1
+ let exact = false
+ let repeats = 10
+ while (sum && !exact && repeats--) {
+  iter()
+  sum = 0
+  exact = true
+  for (let i = 0; i < 9; i++) {
+   sum += living[i]
+   if (living[i] != initialLife[i]) {
+    exact = false
+   }
+  }
+ }
+ return exact
+}
+let found = 0
+let start = Date.now()
+for (let i = 0; i < 10000; i++) {
+ let s = "" + i
+ let struct = Array(9).fill(0)
+ for (let j = 0; j < s.length; j++) {
+  struct[j] = +s[j]
+ }
+ if (quickTest(struct)) {
+  found++
+  console.log(struct)
+ }
+}
+console.log(((Date.now() - start) / 1000) + "s")
+console.log(found + " structures")
