@@ -1,30 +1,16 @@
-let kante = 5
+"use strict"
+let kante, map, living
+let env = Array(8)
 const size = (add = 0) => (kante + add) ** 2
-let map = Array(size()).fill(0)
-let living = Array(9).fill(0)
 const min = (a, b) => Math.min(a, b)
 const max = (a, b) => Math.max(a, b)
-const xy = (pos) => [pos % kante, ~~(pos / kante)]
-const env = [[0, -1], [1, 0], [0, 1], [-1, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]]
+const varEnv = [() => -kante, () => 1, () => kante, () => -1, () => 1 + kante, () => 1 - kante, () => -1 - kante, () => kante - 1]
 const edgePos = [a => [kante - 1 - a, kante - 1], a => [0, a], a => [a, 0], a => [kante - 1, kante - 1 - a]]
 const cord = (x, y, kant = kante) => y * kant + x
-function posRich(pos, rich, mul = 1) {
- return cord(xy(pos)[0] + env[rich][0] * mul, xy(pos)[1] + env[rich][1] * mul)
-}
-function print() {
- let out = ""
- for (let y = 0; y < kante; y++) {
-  for (let x = 0; x < kante; x++) {
-   out += map[cord(x, y)] + ","
-  }
-  out += "\n"
- }
- console.log(out)
-}
 function next(pos) {
  let sum = map[pos]
- for (let rich = 0; rich < 8; rich++) {
-  sum += map[posRich(pos, rich)]
+ for (let dir = 0; dir < 8; dir++) {
+  sum += map[pos + env[dir]]
  }
  return 10 < sum && sum < 20 ? sum % 10 : 0
 }
@@ -32,13 +18,19 @@ function minSizeDif() {
  for (let i = 0; i < kante >> 1; i++) {
   for (let j = i; j < kante - i; j++) {
    for (let l = 0; l < 4; l++) {
-    if (map[posRich(cord(...edgePos[l](j)), l, i + 1)]) {
+    if (map[cord(...edgePos[l](j)) +  env[l]*(i + 1)]) {
      return -2 * i + 2
     }
    }
   }
  }
  return 1 - kante
+}
+function setKante(a) {
+ kante = a
+ for (let i = 0; i < 8; i++) {
+  env[i] = varEnv[i]()
+ }
 }
 function shrinkMap(dif) {
  if (dif) {
@@ -51,7 +43,7 @@ function shrinkMap(dif) {
     newMap[cord(x + half, y + half, kante + dif)] = map[cord(x, y)]
    }
   }
-  kante += dif
+  setKante(kante + dif)
   map = newMap
  }
 }
@@ -69,7 +61,7 @@ function iter() {
  map = newMap
 }
 function quickTest(structure) {
- kante = 5
+ setKante(5)
  map = Array(size()).fill(0)
  let initialLife = Array(9).fill(0)
  for (let x = 1; x < kante - 1; x++) {
@@ -100,11 +92,11 @@ for (let i = 0; i < 10000; i++) {
  let s = "" + i
  let struct = Array(9).fill(0)
  for (let j = 0; j < s.length; j++) {
-  struct[j] = +s[j]
+  struct[8 - j] = +s[s.length - j - 1]
  }
  if (quickTest(struct)) {
   found++
-  console.log(struct)
+  console.log(struct, i)
  }
 }
 console.log(((Date.now() - start) / 1000) + "s")
