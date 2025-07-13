@@ -18,7 +18,7 @@ function minSizeDif() {
  for (let i = 0; i < kante >> 1; i++) {
   for (let j = i; j < kante - i; j++) {
    for (let l = 0; l < 4; l++) {
-    if (map[cord(...edgePos[l](j)) +  env[l]*(i + 1)]) {
+    if (map[cord(...edgePos[l](j)) + env[l] * (i + 1)]) {
      return -2 * i + 2
     }
    }
@@ -86,18 +86,88 @@ function quickTest(structure) {
  }
  return exact
 }
+function saveStruct() {
+ let parts = []
+ let minX = kante
+ let minY = kante
+ for (let x = 0; x < kante; x++) {
+  for (let y = 0; y < kante; y++) {
+   if (map[cord(x, y)]) {
+    minX = min(minX, x)
+    minY = min(minY, y)
+    parts.push([x, y, , map[cord(x, y)]])
+   }
+  }
+ }
+ for (let i = 0; i < parts.length; i++) {
+  parts[i][0] -= minX
+  parts[i][1] -= minY
+ }
+ return parts
+}
+function longTest() {
+ for (let i = 0; i < 100; i++) {
+  iter()
+ }
+ let forms = []
+ let sum = 1
+ while (sum) {
+  iter()
+  let current = saveStruct() + ""
+  for (let i = 0; i < forms.length; i++) {
+   if (current == forms[i]) {
+    return forms.length - i
+   }
+  }
+  forms.push(current)
+  sum = 0
+  for (let i = 0; i < 9; i++) {
+   sum += living[i]
+  }
+ }
+ return false
+}
+function pm() {
+ let out = ""
+ for (let y = 0; y < kante; y++) {
+  for (let x = 0; x < kante; x++) {
+   if (map[cord(x, y)]) {
+    out += map[cord(x, y)] + " "
+   } else {
+    out += "  "
+   }
+  }
+  out += "\n"
+ }
+ console.log(out)
+}
+const options = [0,5]
+const len = options.length
+let foundStructs = []
 let found = 0
 let start = Date.now()
-for (let i = 0; i < 10000; i++) {
- let s = "" + i
+for (let i = 0; i < len ** 9; i++) {
  let struct = Array(9).fill(0)
- for (let j = 0; j < s.length; j++) {
-  struct[8 - j] = +s[s.length - j - 1]
+ let combNum = i
+ for (let j = 8; j > -1; j--) {
+  let times = ~~(combNum / len ** j)
+  combNum -= len ** j * times
+  struct[j] = options[times]
  }
- if (quickTest(struct)) {
-  found++
-  console.log(struct, i)
+ if (quickTest(struct) && longTest()) {
+  let result = saveStruct()
+  let add = true
+  for(let i = 0;i<foundStructs.length;i++){
+   if(result +"" == foundStructs[i]+ ""){
+    add  =false
+    break
+   }
+  }
+  if(add){
+   foundStructs.push(result)
+   pm()
+  }
  }
 }
 console.log(((Date.now() - start) / 1000) + "s")
-console.log(found + " structures")
+console.log(foundStructs.length + " structures")
