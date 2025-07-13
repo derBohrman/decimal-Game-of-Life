@@ -60,15 +60,14 @@ function iter() {
  }
  map = newMap
 }
-function quickTest(structure) {
- setKante(5)
+function quickTest(structure, newKant) {
+ setKante(newKant + 2)
  map = Array(size()).fill(0)
  let initialLife = Array(9).fill(0)
- for (let x = 1; x < kante - 1; x++) {
-  for (let y = 1; y < kante - 1; y++) {
-   map[cord(x, y)] = structure[cord(x - 1, y - 1, 3)]
-   initialLife[map[cord(x, y)] - 1]++
-  }
+ for (let i = 0; i < structure.length; i++) {
+  let [x, y, type] = structure[i]
+  map[cord(x + 1, y + 1)] = type
+  initialLife[type - 1]++
  }
  let sum = 1
  let exact = false
@@ -142,30 +141,44 @@ function pm() {
  console.log(out)
 }
 const options = [0,5]
-const len = options.length
+let struct = [
+ [0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0],
+ [0, 1, 0], [1, 1, 0], [2, 1, 0], [3, 1, 0],
+ [0, 2, 0], [1, 2, 0], [2, 2, 0], [3, 2, 0],
+ [0, 3, 0], [1, 3, 0], [2, 3, 0], [3, 3, 0]
+ ]
+const strLen = struct.length
+const optLen = options.length
 let foundStructs = []
 let found = 0
 let start = Date.now()
-for (let i = 0; i < len ** 9; i++) {
- let struct = Array(9).fill(0)
+let minSize = 0
+for(let i = 0;i<strLen;i++){
+ minSize = max(minSize, struct[i][0]+1,struct[i][1]+1)
+}
+for (let i = 0; i < optLen ** strLen; i++) {
  let combNum = i
- for (let j = 8; j > -1; j--) {
-  let times = ~~(combNum / len ** j)
-  combNum -= len ** j * times
-  struct[j] = options[times]
+ for (let j = strLen - 1; j > -1; j--) {
+  let times = ~~(combNum / optLen ** j)
+  combNum -= optLen ** j * times
+  struct[j][2] = options[times]
  }
- if (quickTest(struct) && longTest()) {
-  let result = saveStruct()
-  let add = true
-  for(let i = 0;i<foundStructs.length;i++){
-   if(result +"" == foundStructs[i]+ ""){
-    add  =false
-    break
+ if (quickTest(struct, minSize)) {
+  let longRes = longTest()
+  if (longRes) {
+   let result = saveStruct()
+   let add = true
+   for (let i = 0; i < foundStructs.length; i++) {
+    if (result + "" == foundStructs[i] + "") {
+     add = false
+     break
+    }
    }
-  }
-  if(add){
-   foundStructs.push(result)
-   pm()
+   if (add) {
+    foundStructs.push(result)
+    pm()
+    console.log(longRes)
+   }
   }
  }
 }
